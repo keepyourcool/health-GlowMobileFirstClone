@@ -2,15 +2,15 @@ import React from 'react';
 import Aux from '../../hoc/Auxiliary/Auxiliary';
 
 const layout = (props) => {
-    return(
+    return (
         <Aux>
-        <div>
-        <main>
-        {props.children}
-        </main>
-        </div>
+            <div>
+                <main>
+                    {props.children}
+                </main>
+            </div>
         </Aux>
-        
+
     )
 }
 
