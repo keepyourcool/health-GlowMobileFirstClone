@@ -213,10 +213,12 @@ class LandingPage extends Component {
                 <Toolbar
                     totalCount={this.state.totalCount}
                     splitLayout={this.state.splitLayout}
+                    sortingMode ={this.state.sortingMode}
                     filterClickHandler={this.filterClickHandler}
                     sortingModeHandler={this.sortingModeHandler}
                     splitLayoutHandler={this.splitLayoutHandler}
                     toggleClicked = {this.toggleClickHandler}
+                    
                 />
                 <SideDrawer 
                 open = {this.state.sideDrawerOpen}

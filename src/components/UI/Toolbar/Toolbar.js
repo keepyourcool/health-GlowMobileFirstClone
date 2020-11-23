@@ -2,7 +2,7 @@ import React from 'react';
 import './Toolbar.css'
 const toolbar = (props) => {
     return (
-        <div className="toolbar">
+        <div className={props.sortingMode?"toolbar toolbar-z-index-sorting":" toolbar toolbar-z-index"}>
             <div className="toolbar-top">
                 <div onClick = {props.toggleClicked} className="toggle-button">
                     <div></div>

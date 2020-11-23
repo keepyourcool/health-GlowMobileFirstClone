@@ -2,7 +2,6 @@
     position: fixed;
     top:0;
     left:0;
-    z-index:25;
     width:100%;
     background-color: white;;
     border-bottom: 1px solid grey;
@@ -10,6 +9,12 @@
     line-height: 1.375em;
     
                           
+}
+.toolbar-z-index-sorting{
+    z-index:30 !important;
+}
+.toolbar-z-index{
+    z-index:25 
 }
 .toolbar-top{
     width: 100%;;
