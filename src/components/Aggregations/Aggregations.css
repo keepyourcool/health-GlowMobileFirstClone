@@ -1,0 +1,19 @@
+.aggregations {
+    height:100%;
+}
+.aggregations ul{
+    list-style: none;
+    margin:0;
+    padding:0 ;
+}
+.aggregations li{
+    padding:0.70em 0px 0.70em 1em;
+    text-align: left;
+    font-size:1em;
+}
+.selected-aggregation{
+    background-color:lightgrey;
+}
+.aggregations li:hover{
+    background-color: rgb(245, 245, 245);
+}

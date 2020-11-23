@@ -1,0 +1,10 @@
+.modal{
+    position:fixed;
+    z-index:30 ;
+    width:100%;
+    background-color: white;
+    box-sizing: border-box;
+    box-shadow: 1px 1px 1px black;
+    border: 1px solid #ccc;
+    bottom: 0;
+}

@@ -1,0 +1,76 @@
+.toolbar{
+    position: fixed;
+    top:0;
+    left:0;
+    z-index:25;
+    width:100%;
+    background-color: white;;
+    border-bottom: 1px solid grey;
+    box-shadow: 1px 1px 5px grey;
+    line-height: 1.375em;
+    
+                          
+}
+.toolbar-top{
+    width: 100%;;
+    display: flex;
+    align-items: center;
+    padding:5px 5px;
+}
+.toggle-button {
+    padding:5px;
+    display:flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+}
+.toggle-button div{
+    width:18px;
+    height:2px;
+    background-color:#636363 ;
+    margin:2px;
+}
+.logo img{
+    padding-top:8px;
+    position: relative;
+    width:151px;
+    height:30px;
+}
+.totalCount {
+    color:#9b9b9b
+}
+.layout-title {
+    margin:5px 0;
+    text-align: center;
+    
+}
+.layout-sort-filter{
+    width:100%;
+    display:flex;
+    justify-content: center;
+    margin:8px 0;
+}
+.layout-sort-filter button{
+    width:35%;
+    margin:0 2px;
+    background-color: white;
+    border:1px solid grey;
+}
+.layout-button{
+    width:35px;
+    height:25px;
+    border:1px solid  grey;
+    background-color: white;;
+    display:flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+}
+.layout-button div{
+    width:8px;
+    height:3px;
+    border:1px solid grey;
+    background-color:white;
+    margin:0.3px;;
+    
+}

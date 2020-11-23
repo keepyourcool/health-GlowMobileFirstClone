@@ -1,0 +1,237 @@
+import React, { Component } from 'react';
+import Aux from '../../hoc/Auxiliary/Auxiliary';
+import Products from '../../components/Products/Products';
+import Spinner from '../../components/UI/Spinner/Spinner';
+import FilterBy from '../FilterBy/FilterBy';
+import Modal from '../../components/UI/Modal/Modal'
+import SortContainer from '../../components/SortContainer/SortContainer';
+import Toolbar from '../../components/UI/Toolbar/Toolbar'
+import './LandingPage.css'
+
+class LandingPage extends Component {
+    state = {
+        products: [],
+        aggregations: [],
+        batchSize: 20,
+        startingIndex: 0,
+        totalCount:0,
+        showSpinner: false,
+        showFilter: false,
+        sortingMode:false,
+        splitLayout:false,
+        filterSet:false,
+        sortSet:false,
+        prevSelection:[],
+        url:""
+
+    }
+    componentDidMount() {
+        
+        this.loadProducts();
+        window.addEventListener('scroll', this.scrollHandler)
+    }
+
+
+    loadProducts = () => {
+        this.setState({ showSpinner: true })
+        const { startingIndex, batchSize } = this.state;
+        const url = `https://staging.healthandglow.com/api/catalog/product/v6/search/999?app=web&version=3.0.2&tag=loreal-paris&page=${startingIndex}:${batchSize}`
+        this.loadDataFromUrl(url);
+       
+    }
+    loadDataFromUrl =(url)=> {
+        
+        console.log(url)
+        fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            // console.log(data);
+        let prevProducts = [];
+        if(this.state.showFilter || this.state.filterSet || this.state.sortSet )
+        prevProducts = [...data.data.products]
+        
+        else prevProducts = [...this.state.products, ...data.data.products]
+        
+            const products= prevProducts.map((product) => {
+
+                const { defaultPrice, listPrice, skuImageUrl, skuName, skuId, skuDiscPercentage, skuAverageRating, skuPromoText } = product
+                const newProduct = {
+                    skuId: skuId, defaultPrice: defaultPrice,
+                    listPrice: listPrice, skuImageUrl: skuImageUrl, skuName: skuName,
+                    skuDiscPercentage, skuAverageRating, skuPromoText
+                }
+                return newProduct
+            });
+            
+            console.log(data)
+            const aggregations = this.state.startingIndex === 0?
+            [...data.data.aggregations]:this.state.aggregations
+            const totalCount = data.data.totalCount;
+            this.setState({ products: products, aggregations: aggregations, totalCount,showSpinner: false,url:url,sortSet:false},()=>{
+                console.log(this.state)
+                console.log(this.state.products)
+            })
+        })
+        debugger
+    }
+    loadMore = () => {
+        
+        this.setState({ startingIndex: this.state.startingIndex + this.state.batchSize, batchSize:7}, this.loadProducts);
+        console.log(this.state.url);
+        debugger
+    }
+    scrollHandler = (ev) => {
+        ev.preventDefault()
+        const { scrollTop, scrollHeight, clientHeight } = ev.target.scrollingElement;
+        if (scrollHeight - (clientHeight + scrollTop)<20) {
+            if(this.state.startingIndex + this.state.batchSize < this.state.totalCount)
+            
+            this.loadMore();
+        }
+
+    }
+    filterClickHandler = () => {
+        this.setState({ showFilter: true })
+    }
+    isSelectedHandler = (index, key) => {
+        // 
+        const newBucket = this.state.aggregations[index].buckets.map(item => {
+            if (item.key === key)
+                return {
+                    ...item,
+                    isSelected: !item.isSelected
+                }
+            else return item
+        })
+        const newAggregation = [...this.state.aggregations];
+        newAggregation[index] = {
+            ...this.state.aggregations[index],
+            buckets:newBucket
+        }
+        // console.log(newAggregation);
+        this.setState({aggregations:newAggregation});
+    }
+    getFilteredData = ()=>{
+        this.setState({showSpinner:true})
+        const url = this.prepareUrl()
+        console.log(url)
+        if(url!==0) {
+            fetch(url)
+            .then(res=>res.json())
+            .then(data=>{
+                const aggregations = [...data.data.aggregations];
+                    this.setState({ aggregations: aggregations, showSpinner:false,url:url})
+                console.log(data)
+                debugger
+            })  
+        }
+        else this.setState({showSpinner:false})
+        
+    }
+    prepareUrl = (startingIndex, batchSize)=> {
+        let isSelectedArr = [];
+        this.state.aggregations.forEach((aggregation)=>{
+            aggregation.buckets.forEach((item)=>{
+                if(item.isSelected){
+                    const isSelectedObj = {}
+                    switch(aggregation.name){
+                        case "price":isSelectedObj["key"] = `${item.from}:${item.to}`;
+                        break;
+                        case "offer":isSelectedObj["key"] = `${item.from}:${item.to}`;
+                        break;
+                        case "exclude_oos":isSelectedObj["key"] = 'true';
+                        break;
+                        default: isSelectedObj["key"] = item.key;
+                    }
+                    isSelectedObj["aggregation"] = aggregation.name;
+                     isSelectedArr.push(isSelectedObj)
+                }
+            })
+        })
+        console.log(isSelectedArr);
+        const temp = isSelectedArr.map((obj)=>obj.key)
+        console.log(temp)
+        console.log(this.state.prevSelection)
+        if(!temp.map(el=>this.state.prevSelection.includes(el)).includes(false) && !this.state.filterSet && this.state.showFilter)
+        return 0;
+        let url = `https://staging.healthandglow.com/api/catalog/product/v6/search/999?app=web&version=3.0.2&tag=loreal-paris&page=${this.state.startingIndex}:${this.state.batchSize}`
+        isSelectedArr.forEach(el=>{
+            url = url + `&${el.aggregation}=${el.key}`
+        })
+        const newSelectedArr = [...temp];
+        this.setState({prevSelection:newSelectedArr})
+        return url
+    }
+    clearFilterHandler = ()=> {
+        this.setState({startingIndex:0, filterSet:false})
+        this.loadProducts();
+    }
+    closeFilterHandler = ()=>{
+        this.setState({showFilter:false})
+    }
+    applyFilterHandler = ()=> {
+        this.setState({showSpinner: true,showFilter:false, filterSet:true, startingIndex:0,batchSize:20})
+        
+        const url = this.prepareUrl()
+        this.setState({url:url})
+        this.loadDataFromUrl(url);
+        debugger
+       
+    }
+    sortHandler =(attribute) => {
+        const url = this.state.url + `&sort=${attribute}:desc`;
+        this.setState({startingIndex:0,showSpinner:true,sortingMode:false, sortSet:true, url:url},()=>{
+            console.log(this.state);
+        })
+        debugger
+        this.loadDataFromUrl(url);
+        
+        
+    }
+    sortCancelHandler = ()=>{
+        this.setState({sortingMode:false})
+    }
+    sortingModeHandler =()=> {
+        this.setState({sortingMode:true})
+    }
+    splitLayoutHandler = ()=> {
+        this.setState({splitLayout:!this.state.splitLayout})
+    }
+    render() {
+        return (
+            <Aux>
+                {this.state.showFilter ?
+                    <FilterBy
+                        aggregations={this.state.aggregations}
+                        isSelectedHandler={this.isSelectedHandler}
+                        getFilteredData ={this.getFilteredData}
+                        showSpinner = {this.state.showSpinner}
+                        clearFilterHandler = {this.clearFilterHandler}
+                        closeFilterHandler = {this.closeFilterHandler}
+                        applyFilterHandler = {this.applyFilterHandler}
+                    /> : null}
+                <Modal show = {this.state.sortingMode} 
+                modalClosed = {this.sortCancelHandler}>
+                <SortContainer sortHandler = {this.sortHandler}
+                sortCancelHandler ={this.sortCancelHandler} />
+                </Modal>
+                <Toolbar
+                 totalCount = {this.state.totalCount}
+                 splitLayout = {this.state.splitLayout}
+                 filterClickHandler = {this.filterClickHandler}
+                 sortingModeHandler = {this.sortingModeHandler}
+                 splitLayoutHandler ={this.splitLayoutHandler}
+                 />
+                    <div className= "landing-page-container">
+                        {this.state.showSpinner ? <Spinner /> : null}
+                        <Products 
+                        splitLayout = {this.state.splitLayout}
+                        products={this.state.products} />
+
+                </div>
+            </Aux>
+        )
+    }
+
+}
+export default LandingPage;

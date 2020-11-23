@@ -1,0 +1,41 @@
+.buckets {
+    height:85%;
+    overflow:scroll;
+    overflow-x: hidden;
+}
+.buckets ul{
+    list-style: none;
+    margin:0;
+    padding:0 ;
+}
+.buckets li{
+    padding:0.70em 0px 0.70em 1em;
+    text-align: left;
+    font-size:0.9em;
+    margin:0 5px;
+}
+
+.buckets-item-count {
+    color:#636363
+}
+.buckets i{
+    float:right;
+    margin:2px;
+}
+.unselected {
+    color:lightgrey;
+}
+.selected {
+    color:#f57b02;
+}
+.buckets li>span{
+    color:grey;}
+
+.buckets li:hover{
+    background-color: rgb(245, 245, 245);
+}
+@media (max-height:670px) {
+    .buckets {
+        height:80%;
+    }
+}

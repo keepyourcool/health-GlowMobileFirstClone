@@ -1,0 +1,10 @@
+.layout-two {
+    display:flex;
+    flex-flow: row wrap;
+    justify-content:space-between;
+}
+.product {
+    width:49%;
+   
+    margin:5px 0;
+}

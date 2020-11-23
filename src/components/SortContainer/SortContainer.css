@@ -1,0 +1,13 @@
+.sort-container{
+    width:100%;
+    text-align: center;
+}
+.sort-container p{
+    margin:0;
+    padding:10px;
+    cursor: pointer;
+    
+}
+.sort-container-close {
+    background-color: lightgrey ;
+}
