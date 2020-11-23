@@ -79,3 +79,8 @@
     margin:0.3px;;
     
 }
+@media (min-width:400px) {
+    .toggle-button {
+        display:none
+    }
+}
