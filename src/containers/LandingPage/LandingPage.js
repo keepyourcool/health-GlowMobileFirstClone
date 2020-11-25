@@ -7,8 +7,7 @@ import Modal from '../../components/UI/Modal/Modal'
 import SortContainer from '../../components/SortContainer/SortContainer';
 import Toolbar from '../../components/UI/Toolbar/Toolbar'
 import SideDrawer from '../../components/UI/SideDrawer/SideDrawer'
-import './LandingPage.css'
-import sideDrawer from '../../components/UI/SideDrawer/SideDrawer';
+import './LandingPage.css';
 
 class LandingPage extends Component {
     state = {
@@ -21,73 +20,94 @@ class LandingPage extends Component {
         showFilter: false,
         sortingMode: false,
         splitLayout: false,
-        filterSet: false,
         sortSet: false,
         prevSelection: [],
-        sideDrawerOpen:false,
-        url: ""
+        sideDrawerOpen: false,
+        sortBy: null,
+        url: `https://staging.healthandglow.com/api/catalog/product/v6/search/999?app=web&version=3.0.2&tag=loreal-paris&page=0:20`
 
     }
     componentDidMount() {
 
-        this.loadProducts();
-        window.addEventListener('scroll', this.scrollHandler)
+        this.loadFirstProducts();
+        window.addEventListener('scroll', (ev) => {
+            this.scrollHandler(ev);
+        })
     }
 
+    loadFirstProducts() {
+        this.setState({ showSpinner: true });
+        const match = this.state.url.match(/&page=\d*:\d*/g)
+        const newUrl = this.state.url.replace(match, `&page=${this.state.startingIndex}:${this.state.batchSize}`)
 
-    loadProducts = () => {
-        this.setState({ showSpinner: true })
-        const { startingIndex, batchSize } = this.state;
-        const url = `https://staging.healthandglow.com/api/catalog/product/v6/search/999?app=web&version=3.0.2&tag=loreal-paris&page=${startingIndex}:${batchSize}`
-        this.loadDataFromUrl(url);
+        this.setState({ url: newUrl }, () => {
 
-    }
-    loadDataFromUrl = (url) => {
+            fetch(this.state.url)
+                .then(response => response.json())
+                .then(data => {
+                    const products = data.data.products.map((product) => {
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                let prevProducts = [];
-                if (this.state.showFilter || this.state.filterSet || this.state.sortSet)
-                    prevProducts = [...data.data.products]
-
-                else prevProducts = [...this.state.products, ...data.data.products]
-
-                const products = prevProducts.map((product) => {
-
-                    const { defaultPrice, listPrice, skuImageUrl, skuName, skuId, skuDiscPercentage, skuAverageRating, skuPromoText } = product
-                    const newProduct = {
-                        skuId: skuId, defaultPrice: defaultPrice,
-                        listPrice: listPrice, skuImageUrl: skuImageUrl, skuName: skuName,
-                        skuDiscPercentage, skuAverageRating, skuPromoText
-                    }
-                    return newProduct
-                });
-                const aggregations = this.state.startingIndex === 0 ?
-                    [...data.data.aggregations] : this.state.aggregations
-                const totalCount = data.data.totalCount;
-                this.setState({ products: products, aggregations: aggregations, totalCount, showSpinner: false, url: url, sortSet: false }, () => {
+                        const { defaultPrice, listPrice, skuImageUrl, skuName, skuId, skuDiscPercentage, skuAverageRating, skuPromoText } = product
+                        const newProduct = {
+                            skuId: skuId, defaultPrice: defaultPrice,
+                            listPrice: listPrice, skuImageUrl: skuImageUrl, skuName: skuName,
+                            skuDiscPercentage, skuAverageRating, skuPromoText
+                        }
+                        return newProduct
+                    });
+                    const aggregations = [...data.data.aggregations];
+                    const totalCount = data.data.totalCount;
+                    this.setState({ products: products, aggregations: aggregations, totalCount, showSpinner: false }, () => {
+                    })
                 })
-            })
+        })
 
     }
-    loadMore = () => {
+    loadRestProducts() {
+        debugger
+        this.setState({ showSpinner: true });
+        const match = this.state.url.match(/&page=\d*:\d*/g)
+        const newUrl = this.state.url.replace(match, `&page=${this.state.startingIndex}:${this.state.batchSize}`)
+        this.setState({ url: newUrl }, () => {
+            fetch(newUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const products = [...this.state.products, ...data.data.products].map((product) => {
 
-        this.setState({ startingIndex: this.state.startingIndex + this.state.batchSize, batchSize: 7 }, this.loadProducts);
+                        const { defaultPrice, listPrice, skuImageUrl, skuName, skuId, skuDiscPercentage, skuAverageRating, skuPromoText } = product
+                        const newProduct = {
+                            skuId: skuId, defaultPrice: defaultPrice,
+                            listPrice: listPrice, skuImageUrl: skuImageUrl, skuName: skuName,
+                            skuDiscPercentage, skuAverageRating, skuPromoText
+                        }
+                        return newProduct
+                    });
+                    this.setState({ products: products, showSpinner: false }, () => {
+                    })
+                })
+        })
 
     }
+
     scrollHandler = (ev) => {
+
         ev.preventDefault()
         const { scrollTop, scrollHeight, clientHeight } = ev.target.scrollingElement;
         if (scrollHeight - (clientHeight + scrollTop) < 20) {
-            if (this.state.startingIndex + this.state.batchSize < this.state.totalCount)
+            if (this.state.startingIndex + this.state.batchSize < this.state.totalCount) {
+                let { startingIndex, batchSize } = this.state;
+                const newStartingIndex = startingIndex + batchSize;
+                const newBatchSize = 7;
+                this.setState({ startingIndex: newStartingIndex, batchSize: newBatchSize }, () => {
+                    this.loadRestProducts();
+                })
+            }
 
-                this.loadMore();
         }
 
     }
     filterClickHandler = () => {
-        this.setState({ showFilter: true })
+        this.setState({ showFilter: true, filter: false })
     }
     isSelectedHandler = (index, key) => {
         // 
@@ -108,20 +128,23 @@ class LandingPage extends Component {
     }
     getFilteredData = () => {
         this.setState({ showSpinner: true })
-        const url = this.prepareUrl()
+        const url = this.prepareUrl();
+
         if (url !== 0) {
-            fetch(url)
+            const match = url.match(/&page=\d*:\d*/g)
+            const newUrl = url.replace(match, `&page=${0}:${20}`)
+            fetch(newUrl)
                 .then(res => res.json())
                 .then(data => {
                     const aggregations = [...data.data.aggregations];
-                    this.setState({ aggregations: aggregations, showSpinner: false, url: url })
+                    this.setState({ aggregations: aggregations, showSpinner: false })
 
                 })
         }
         else this.setState({ showSpinner: false })
 
     }
-    prepareUrl = (startingIndex, batchSize) => {
+    prepareUrl = () => {
         let isSelectedArr = [];
         this.state.aggregations.forEach((aggregation) => {
             aggregation.buckets.forEach((item) => {
@@ -142,38 +165,47 @@ class LandingPage extends Component {
             })
         })
         const temp = isSelectedArr.map((obj) => obj.key)
-        if (!temp.map(el => this.state.prevSelection.includes(el)).includes(false) && !this.state.filterSet && this.state.showFilter)
+        const str1 = temp.join("");
+        const str2 = this.state.prevSelection.join("");
+        if (str1 === str2 && this.state.showFilter)
             return 0;
-        let url = `https://staging.healthandglow.com/api/catalog/product/v6/search/999?app=web&version=3.0.2&tag=loreal-paris&page=${this.state.startingIndex}:${this.state.batchSize}`
+
+        let url = "https://staging.healthandglow.com/api/catalog/product/v6/search/999?app=web&version=3.0.2&tag=loreal-paris&page=0:20";
         isSelectedArr.forEach(el => {
             url = url + `&${el.aggregation}=${el.key}`
         })
+        if (this.state.sortSet)
+            url = url + `&sort=${this.state.sortBy}:desc`;
         const newSelectedArr = [...temp];
         this.setState({ prevSelection: newSelectedArr })
         return url
     }
     clearFilterHandler = () => {
-        this.setState({ startingIndex: 0, filterSet: false })
-        this.loadProducts();
+        this.setState({ startingIndex: 0 })
+        this.loadFirstProducts();
     }
     closeFilterHandler = () => {
         this.setState({ showFilter: false })
     }
     applyFilterHandler = () => {
-        this.setState({ showSpinner: true, showFilter: false, filterSet: true, startingIndex: 0, batchSize: 20 })
+        this.setState({ showSpinner: true, showFilter: false, startingIndex: 0, batchSize: 20 })
 
         const url = this.prepareUrl()
-        this.setState({ url: url })
-        this.loadDataFromUrl(url);
+        if (url !== 0)
+            this.setState({ url: url }, () => {
+                this.loadFirstProducts();
+            })
+        else this.setState({ showSpinner: false })
+
 
 
     }
     sortHandler = (attribute) => {
         const url = this.state.url + `&sort=${attribute}:desc`;
-        this.setState({ startingIndex: 0, showSpinner: true, sortingMode: false, sortSet: true, url: url }, () => {
+        this.setState({ startingIndex: 0, batchSize: 20, showSpinner: true, sortingMode: false, sortSet: true, sortBy: attribute, url: url }, () => {
+            this.loadFirstProducts();
         })
 
-        this.loadDataFromUrl(url);
 
 
     }
@@ -186,11 +218,11 @@ class LandingPage extends Component {
     splitLayoutHandler = () => {
         this.setState({ splitLayout: !this.state.splitLayout })
     }
-    closeSideDrawerHandler = ()=>{
-        this.setState({sideDrawerOpen:false})
+    closeSideDrawerHandler = () => {
+        this.setState({ sideDrawerOpen: false })
     }
-    toggleClickHandler = ()=>{
-        this.setState({sideDrawerOpen:!this.state.sideDrawerOpen})
+    toggleClickHandler = () => {
+        this.setState({ sideDrawerOpen: !this.state.sideDrawerOpen })
     }
     render() {
         return (
@@ -213,16 +245,16 @@ class LandingPage extends Component {
                 <Toolbar
                     totalCount={this.state.totalCount}
                     splitLayout={this.state.splitLayout}
-                    sortingMode ={this.state.sortingMode}
+                    sortingMode={this.state.sortingMode}
                     filterClickHandler={this.filterClickHandler}
                     sortingModeHandler={this.sortingModeHandler}
                     splitLayoutHandler={this.splitLayoutHandler}
-                    toggleClicked = {this.toggleClickHandler}
-                    
+                    toggleClicked={this.toggleClickHandler}
+
                 />
-                <SideDrawer 
-                open = {this.state.sideDrawerOpen}
-                clickBackdrop = {this.closeSideDrawerHandler}/>
+                <SideDrawer
+                    open={this.state.sideDrawerOpen}
+                    clickBackdrop={this.closeSideDrawerHandler} />
                 <div className="landing-page-container">
                     {this.state.showSpinner ? <Spinner /> : null}
                     <Products
